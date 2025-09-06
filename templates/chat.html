@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PopChat - {{ room_name }}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Montserrat', sans-serif; background-color: #10141f; color: #ffffff; margin: 0; display: flex; height: 100vh; }
+        .sidebar { width: 250px; background-color: #0B0C10; padding: 20px; display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid #161d2f; }
+        .sidebar h2 { color: #3366ff; font-size: 1.2em; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; }
+        #user-list { list-style: none; padding: 0; flex-grow: 1; overflow-y: auto; }
+        #user-list li { padding: 8px 0; color: #c3c4c7; }
+        .back-link { text-decoration: none; background-color: #161d2f; color: white; padding: 12px; border-radius: 50px; text-align: center; font-weight: bold; transition: background-color 0.2s; margin-top: 10px; }
+        .back-link:hover { background-color: #3366ff; }
+        
+        .main-chat { display: flex; flex-direction: column; flex-grow: 1; }
+        header { background-color: #161d2f; padding: 15px 25px; font-size: 1.5em; font-weight: bold; border-bottom: 1px solid #0B0C10; }
+        
+        #chat-window { flex-grow: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .message-container { display: flex; flex-direction: column; max-width: 70%; }
+        .message { background-color: #161d2f; padding: 10px 15px; border-radius: 18px; word-wrap: break-word; }
+        .user { font-weight: bold; color: #fff; margin-bottom: 5px; }
+        .message img { max-width: 100%; border-radius: 10px; margin-top: 5px; }
+        .message-container.sent { align-self: flex-end; align-items: flex-end; }
+        .message-container.sent .message { background: #3366ff; color: white; }
+        .message-container.received { align-self: flex-start; align-items: flex-start; }
+        .status-message { text-align: center; color: #808080; font-style: italic; width: 100%; }
+        
+        #form-container { padding: 20px; background-color: #161d2f; position: relative; border-top: 1px solid #0B0C10; }
+        #message-form { display: flex; }
+        #message-input { flex-grow: 1; padding: 15px; border-radius: 50px; border: none; background-color: #10141f; color: #fff; font-size: 1em; }
+        .form-buttons button, .form-buttons label { background: none; border: none; color: #c3c4c7; font-size: 1.5em; cursor: pointer; margin-left: 10px; transition: color 0.2s; }
+        .form-buttons button:hover, .form-buttons label:hover { color: #fff; }
+        #send-button { color: #3366ff; }
+        #image-upload { display: none; }
+        emoji-picker { position: absolute; bottom: 85px; right: 20px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Usuários Ativos</h2>
+        <ul id="user-list"></ul>
+        <a href="{{ url_for('rooms') }}" class="back-link">Voltar para Salas</a>
+    </div>
+    <div class="main-chat">
+        <header>{{ room_name }}</header>
+        <div id="chat-window"></div>
+        <div id="form-container">
+            <form id="message-form" autocomplete="off">
+                <input id="message-input" type="text" placeholder="Digite sua mensagem...">
+                <div class="form-buttons">
+                    <button type="button" id="emoji-btn" title="Emojis">😀</button>
+                    <label for="image-upload" title="Enviar Imagem">🖼️</label>
+                    <input type="file" id="image-upload" accept="image/*">
+                    <button id="send-button" type="submit" title="Enviar">➤</button>
+                </div>
+            </form>
+            <emoji-picker></emoji-picker>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const socket = io();
+            const roomName = "{{ room_name }}";
+            const currentUsername = "{{ current_user.username }}";
+            socket.on('connect', () => { socket.emit('join', { room: roomName }); });
+            window.addEventListener('beforeunload', () => { socket.emit('leave', { room: roomName }); });
+
+            const chatWindow = document.getElementById('chat-window');
+            const messageForm = document.getElementById('message-form');
+            const messageInput = document.getElementById('message-input');
+            const userList = document.getElementById('user-list');
+
+            messageForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const msg = messageInput.value;
+                if (msg.trim()) {
+                    socket.emit('message', { room: roomName, msg: msg });
+                    messageInput.value = '';
+                }
+            });
+
+            const addMessage = (data) => {
+                const messageContainer = document.createElement('div');
+                messageContainer.className = `message-container ${data.user === currentUsername ? 'sent' : 'received'}`;
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message';
+                if (data.user !== currentUsername) {
+                    const userElement = document.createElement('div');
+                    userElement.className = 'user';
+                    userElement.textContent = data.user;
+                    messageElement.appendChild(userElement);
+                }
+                if (data.type === 'image') {
+                    const img = document.createElement('img');
+                    img.src = data.url;
+                    messageElement.appendChild(img);
+                } else {
+                    const msg = document.createElement('div');
+                    msg.textContent = data.msg;
+                    messageElement.appendChild(msg);
+                }
+                messageContainer.appendChild(messageElement);
+                chatWindow.appendChild(messageContainer);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            };
+
+            const addStatusMessage = (msg) => {
+                const statusElement = document.createElement('div');
+                statusElement.className = 'status-message';
+                statusElement.textContent = msg;
+                chatWindow.appendChild(statusElement);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            };
+
+            socket.on('new_message', (data) => addMessage(data));
+            socket.on('status', (data) => addStatusMessage(data.msg));
+            
+            socket.on('update_user_list', (users) => {
+                userList.innerHTML = '';
+                users.forEach(user => {
+                    const li = document.createElement('li');
+                    li.textContent = user;
+                    userList.appendChild(li);
+                });
+            });
+
+            const emojiPicker = document.querySelector('emoji-picker');
+            document.getElementById('emoji-btn').addEventListener('click', () => {
+                emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'block' : 'none';
+            });
+            emojiPicker.addEventListener('emoji-click', event => {
+                messageInput.value += event.detail.unicode;
+            });
+
+            document.getElementById('image-upload').addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('room', roomName);
+                    fetch('/upload', { method: 'POST', body: formData });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

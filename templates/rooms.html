@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PopChat - Home</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #10141f;
+            --bg-cards: #161d2f;
+            --text-white: #ffffff;
+            --text-gray: #c3c4c7;
+            --accent-blue: #3366ff;
+            --accent-blue-hover: #5a82ff;
+        }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-white);
+            margin: 0;
+        }
+        .container { padding: 0 40px; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+        }
+        .header h1 {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+        }
+        .logout-btn {
+            color: var(--text-white);
+            text-decoration: none;
+            background-color: var(--bg-cards);
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .logout-btn:hover { background-color: var(--accent-blue); }
+
+        /* ESTILO DO HERO CORRIGIDO E RESTAURADO */
+        .hero {
+            height: 40vh;
+            border-radius: 12px;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_FMjpg_UX1000_.jpg) center/cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 40px;
+            margin-bottom: 40px;
+        }
+        .hero h2 {
+            font-size: 3em;
+            margin: 0;
+            font-weight: 900;
+        }
+        .hero p {
+            font-size: 1.2em;
+            color: var(--text-gray);
+            max-width: 50%;
+            margin-top: 10px;
+        }
+
+        .category-grid, .room-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 25px;
+        }
+        .category-card {
+            background-color: var(--bg-cards);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            padding: 30px 20px;
+        }
+        .room-card {
+            background-color: var(--bg-cards);
+            text-decoration: none;
+            color: var(--text-white);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            position: relative;
+        }
+        .category-card:hover, .room-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5), 0 0 20px var(--accent-blue);
+        }
+        .room-card img {
+            width: 100%;
+            display: block;
+            aspect-ratio: 2 / 3;
+            object-fit: cover;
+        }
+        .room-card-title {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 25px 15px 15px;
+            font-weight: bold;
+            text-align: center;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+        }
+        
+        #rooms-view-header { display: flex; align-items: center; margin-bottom: 20px; }
+        #back-button { background-color: var(--bg-cards); color: white; border: none; padding: 10px 20px; border-radius: 50px; cursor: pointer; font-size: 1em; margin-right: 20px; transition: background-color 0.2s; }
+        #back-button:hover { background-color: var(--accent-blue); }
+        #rooms-view-title { font-size: 2.5em; color: #fff; margin: 0; }
+        .sub-category-title { font-size: 1.5em; color: var(--text-gray); margin: 40px 0 20px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="page-title">PopChat</h1>
+            <a href="{{ url_for('logout') }}" class="logout-btn">Sair</a>
+        </div>
+
+        <div id="main-categories-view">
+            <div class="hero">
+                <h2>Bem-vindo ao PopChat</h2>
+                <p>O seu universo de cultura pop. Escolha uma categoria abaixo e entre na conversa.</p>
+            </div>
+            <div id="category-grid-container" class="category-grid"></div>
+        </div>
+
+        <div id="rooms-view" class="hidden">
+            <div id="rooms-view-header">
+                <button id="back-button">← Voltar</button>
+                <h2 id="rooms-view-title"></h2>
+            </div>
+            <div id="rooms-list-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const categorizedRooms = {{ categorized_rooms | tojson }};
+        const mainCategoriesView = document.getElementById('main-categories-view');
+        const categoryGridContainer = document.getElementById('category-grid-container');
+        const roomsView = document.getElementById('rooms-view');
+        const roomsViewTitle = document.getElementById('rooms-view-title');
+        const roomsListContainer = document.getElementById('rooms-list-container');
+        const backButton = document.getElementById('back-button');
+
+        function displayMainCategories() {
+            categoryGridContainer.innerHTML = '';
+            for (const categoryName in categorizedRooms) {
+                const card = document.createElement('div');
+                card.className = 'category-card';
+                card.textContent = categoryName;
+                card.dataset.category = categoryName; 
+                categoryGridContainer.appendChild(card);
+            }
+            mainCategoriesView.classList.remove('hidden');
+            roomsView.classList.add('hidden');
+        }
+
+        function displayRoomsForCategory(categoryName) {
+            roomsListContainer.innerHTML = '';
+            roomsViewTitle.textContent = categoryName;
+            const subCategories = categorizedRooms[categoryName];
+            for (const subCategoryName in subCategories) {
+                const subCategoryContainer = document.createElement('div');
+                const subCategoryTitle = document.createElement('h3');
+                subCategoryTitle.className = 'sub-category-title';
+                subCategoryTitle.textContent = subCategoryName;
+                subCategoryContainer.appendChild(subCategoryTitle);
+
+                const roomList = document.createElement('div');
+                roomList.className = 'room-list';
+                const rooms = subCategories[subCategoryName];
+                rooms.forEach(room => {
+                    const roomLink = document.createElement('a');
+                    roomLink.className = 'room-card';
+                    roomLink.href = "{{ url_for('chat', room_name='PLACEHOLDER') }}".replace('PLACEHOLDER', room.name);
+
+                    const img = document.createElement('img');
+                    img.src = room.image;
+                    
+                    const title = document.createElement('div');
+                    title.className = 'room-card-title';
+                    title.textContent = room.name;
+
+                    roomLink.appendChild(img);
+                    roomLink.appendChild(title);
+                    roomList.appendChild(roomLink);
+                });
+                subCategoryContainer.appendChild(roomList);
+                roomsListContainer.appendChild(subCategoryContainer);
+            }
+            mainCategoriesView.classList.add('hidden');
+            roomsView.classList.remove('hidden');
+        }
+
+        categoryGridContainer.addEventListener('click', (event) => {
+            const categoryCard = event.target.closest('.category-card');
+            if (categoryCard) {
+                displayRoomsForCategory(categoryCard.dataset.category);
+            }
+        });
+        backButton.addEventListener('click', () => { displayMainCategories(); });
+        
+        displayMainCategories();
+    </script>
+</body>
+</html>

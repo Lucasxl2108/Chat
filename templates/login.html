@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PopChat - Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #10141f; /* Azul-marinho escuro */
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .flash {
+            padding: 15px;
+            border-radius: 4px;
+            position: absolute;
+            top: 20px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            font-weight: bold;
+            color: #fff;
+        }
+        .flash.success { background-color: #00b341; }
+        .flash.danger { background-color: #c53030; }
+        .container {
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 40px 60px;
+            border-radius: 8px;
+            display: flex;
+            gap: 60px;
+        }
+        .form-box { width: 300px; }
+        h2 { font-size: 2em; font-weight: 700; margin-bottom: 30px; }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #161d2f;
+            background-color: #161d2f;
+            color: #fff;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        input:focus { outline: 2px solid #3366ff; }
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #3366ff;
+            color: white;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #5a82ff; }
+    </style>
+</head>
+<body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="container">
+        <div class="form-box">
+            <h2>Entrar</h2>
+            <form action="{{ url_for('login') }}" method="POST">
+                <input type="text" name="username" placeholder="Usuário" required>
+                <input type="password" name="password" placeholder="Senha" required>
+                <button type="submit">Entrar</button>
+            </form>
+        </div>
+        <div class="form-box">
+            <h2>Registrar</h2>
+            <form action="{{ url_for('register') }}" method="POST">
+                <input type="text" name="username" placeholder="Usuário" required>
+                <input type="password" name="password" placeholder="Senha" required>
+                <button type="submit">Criar Conta</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
